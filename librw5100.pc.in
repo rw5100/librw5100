@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: librw5100
+Description: RW5100 smart card reader library using libusb
+Version: @PROJECT_VERSION@
+Requires.private: libusb-1.0
+Libs: -L${libdir} -lrw5100
+Cflags: -I${includedir}
