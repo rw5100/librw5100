@@ -1,6 +1,9 @@
 #include "card.h"
 #include "frame.h"
 #include <string.h>
+#ifdef __APPLE__
+#include <syslog.h>
+#endif
 
 static unsigned left(uint64_t deadline) {
     uint64_t now=rw_now_ms();
@@ -116,7 +119,17 @@ int rw_reset_impl(rw_device *d,int warm,uint8_t *atr,size_t *n,unsigned timeout)
         rw_sleep_ms(500);
     }
     e=simple(d,0xd1,&arg,1,deadline);
-    if(!e) e=get_atr(d,deadline);
+#ifdef __APPLE__
+    syslog(e?LOG_ERR:LOG_NOTICE,"rw5100 reset status=0x%02x D1_arg=%u result=%d poisoned=%d",
+           d->status_bits,arg,e,d->poisoned);
+#endif
+    if(!e) {
+        e=get_atr(d,deadline);
+#ifdef __APPLE__
+        syslog(e?LOG_ERR:LOG_NOTICE,"rw5100 reset ATR result=%d length=%zu poisoned=%d",
+               e,d->atr_len,d->poisoned);
+#endif
+    }
     if(e) return e;
     d->card_status=RW_CARD_POWERED;
     /* device 0x12e2c uses D1 to select the requested PC/SC protocol.
