@@ -372,6 +372,7 @@ int rw_apdu_transmit(rw_device *device, const uint8_t *apdu, size_t apdu_len,
     rc = device->protocol == RW_PROTOCOL_T0 ?
         transmit_t0(device, apdu, apdu_len, response, &result_len, deadline) :
         transmit_t1(device, apdu, apdu_len, response, &result_len, deadline);
+    if (rc == RW_OK && result_len < 2) rc = RW_ERROR_FRAME;
     if (rc == RW_OK || rc == RW_ERROR_BUFFER) {
         *response_len = result_len;
     } else {

@@ -219,7 +219,32 @@ static void t0_null_and_case4(void) {
     assert(call_count == 2 && n == 2 && !memcmp(out, sw, 2));
 }
 
+static void observed_device_exchange(void) {
+    const uint8_t apdu[] = {0,0xa4,0,0x0c,2,0x3f,0};
+    const uint8_t reply0[] = {0x25,0,2,0x6a,0x81,0xcc};
+    const uint8_t reply1[] = {0x25,0x40,2,0x6a,0x81,0x8c};
+    const uint8_t nak[] = {0x25,0x82,0,0xa7};
+    uint8_t out[8]; size_t n=sizeof(out); rw_device d=fresh_t1(0xfe);
+    reset_script();
+    step *s=add_exchange(0,apdu,sizeof(apdu),0,NULL,0);
+    memcpy(s->rx,nak,sizeof(nak)); s->rx_len=sizeof(nak);
+    s=add_exchange(0,apdu,sizeof(apdu),0,NULL,0);
+    memcpy(s->rx,reply0,sizeof(reply0)); s->rx_len=sizeof(reply0);
+    assert(rw_apdu_transmit(&d,apdu,sizeof(apdu),out,&n,100)==RW_OK);
+    assert(n==2 && out[0]==0x6a && out[1]==0x81);
+    reset_script(); n=sizeof(out);
+    s=add_exchange(0x40,apdu,sizeof(apdu),0,NULL,0);
+    memcpy(s->rx,reply1,sizeof(reply1)); s->rx_len=sizeof(reply1);
+    assert(rw_apdu_transmit(&d,apdu,sizeof(apdu),out,&n,100)==RW_OK);
+    assert(n==2 && d.ns==0 && d.nr==0);
+    reset_script(); n=sizeof(out); d.ready=1;
+    add_exchange(0,apdu,sizeof(apdu),0,NULL,0);
+    assert(rw_apdu_transmit(&d,apdu,sizeof(apdu),out,&n,100)==RW_ERROR_FRAME);
+    assert(n==0 && !d.ready);
+}
+
 int main(void) {
+    observed_device_exchange();
     simple_select();
     chained_command();
     chained_response();
